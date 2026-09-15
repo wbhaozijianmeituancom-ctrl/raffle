@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎉 Next Host Raffle</title>
+  <style>
+    /* ===== BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      font-family: 'Segoe UI', Arial, sans-serif;
+      color: #fff;
+      padding: 24px 16px;
+    }
+
+    /* ===== TITLE ===== */
+    h1 {
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      letter-spacing: 2px;
+      text-align: center;
+      background: linear-gradient(90deg, #f7971e, #ffd200, #f7971e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #aaa;
+      font-size: 0.95rem;
+      margin-bottom: 32px;
+    }
+
+    /* ===== CARD ===== */
+    .card {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 36px 40px;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    /* ===== SLOT DISPLAY ===== */
+    .slot-wrapper {
+      width: 100%;
+      background: rgba(0,0,0,0.35);
+      border-radius: 14px;
+      padding: 28px 16px;
+      text-align: center;
+      min-height: 110px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .slot-text {
+      font-size: clamp(1.8rem, 5vw, 2.6rem);
+      font-weight: 700;
+      color: #ffd200;
+      letter-spacing: 2px;
+      transition: opacity 0.1s;
+      word-break: break-all;
+    }
+    .slot-placeholder {
+      font-size: 1.1rem;
+      color: #666;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-row {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn {
+      padding: 12px 28px;
+      border: none;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn-primary {
+      background: linear-gradient(135deg, #f7971e, #ffd200);
+      color: #1a1a2e;
+      box-shadow: 0 4px 20px rgba(247,151,30,0.4);
+    }
+    .btn-primary:hover { box-shadow: 0 6px 28px rgba(247,151,30,0.6); }
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.18); }
+    .btn-edit {
+      background: rgba(100, 200, 255, 0.15);
+      color: #64c8ff;
+      border: 1px solid rgba(100, 200, 255, 0.3);
+      font-size: 0.9rem;
+      padding: 9px 20px;
+    }
+    .btn-edit:hover { background: rgba(100, 200, 255, 0.25); }
+
+    /* ===== PARTICIPANTS TOGGLE ===== */
+    .participants-section { width: 100%; }
+    .participants-toggle {
+      background: none;
+      border: none;
+      color: #aaa;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      justify-content: center;
+    }
+    .participants-toggle:hover { color: #fff; }
+    .participants-list {
+      display: none;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      justify-content: center;
+    }
+    .participants-list.open { display: flex; }
+    .participant-tag {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.82rem;
+      color: #ddd;
+    }
+
+    /* ===== RESULT BANNER ===== */
+    .result-banner {
+      display: none;
+      text-align: center;
+      animation: fadeIn 0.5s ease;
+    }
+    .result-banner.show { display: block; }
+    .result-banner .congrats {
+      font-size: 1.4rem;
+      color: #ffd200;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .result-banner .winner-name {
+      font-size: 2.2rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, #f7971e, #ffd200);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ===== MODAL OVERLAY ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #1a2340;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 32px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+      animation: slideUp 0.25s ease;
+    }
+    .modal h2 {
+      font-size: 1.25rem;
+      color: #64c8ff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .modal-hint {
+      font-size: 0.82rem;
+      color: #888;
+      line-height: 1.5;
+    }
+    .modal textarea {
+      flex: 1;
+      min-height: 220px;
+      max-height: 340px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 0.95rem;
+      padding: 12px 14px;
+      resize: vertical;
+      line-height: 1.7;
+      outline: none;
+    }
+    .modal textarea:focus { border-color: #64c8ff; }
+    .modal-footer {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+    .btn-save {
+      background: linear-gradient(135deg, #64c8ff, #0099cc);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      padding: 10px 26px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-save:hover { opacity: 0.88; }
+    .btn-cancel {
+      background: rgba(255,255,255,0.08);
+      color: #aaa;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 50px;
+      padding: 10px 22px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-cancel:hover { background: rgba(255,255,255,0.15); }
+    .count-badge {
+      margin-left: auto;
+      font-size: 0.8rem;
+      background: rgba(100,200,255,0.15);
+      color: #64c8ff;
+      border-radius: 20px;
+      padding: 2px 10px;
+    }
+
+    /* ===== CONFETTI ===== */
+    .confetti-container {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 200;
+      overflow: hidden;
+    }
+    .confetti-piece {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      top: -20px;
+      animation: confettiFall linear forwards;
+    }
+
+  /* ===== SHARE LINK ===== */
+    .link-bar {
+      width: 100%;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .link-input {
+      flex: 1;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 9px 12px;
+      color: #aaa;
+      font-size: 0.78rem;
+      font-family: monospace;
+      outline: none;
+    }
+    .link-input:focus { border-color: rgba(100,200,255,0.3); color: #ddd; }
+    .btn-copy {
+      background: rgba(100,200,255,0.12);
+      color: #64c8ff;
+      border: 1px solid rgba(100,200,255,0.2);
+      border-radius: 50px;
+      padding: 8px 16px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .btn-copy:hover { background: rgba(100,200,255,0.2); }
+    .btn-copy.copied { background: rgba(80,200,120,0.15); color: #7ee787; border-color: rgba(80,200,120,0.3); }
+    .sync-hint {
+      font-size: 0.72rem;
+      color: #666;
+      text-align: center;
+      width: 100%;
+    }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp {
+      from { transform: translateY(30px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    @keyframes confettiFall {
+      to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎲 Next Host Raffle</h1>
+  <p class="subtitle">CMT Monthly Meeting</p>
+
+  <div class="card">
+    <!-- Slot Display -->
+    <div class="slot-wrapper" id="slotWrapper">
+      <span class="slot-placeholder" id="slotPlaceholder">--- Ready to Roll ---</span>
+      <span class="slot-text" id="slotText" style="display:none;"></span>
+    </div>
+
+    <!-- Result Banner -->
+    <div class="result-banner" id="resultBanner">
+      <div class="congrats">🎉 Congratulations!</div>
+      <div class="winner-name" id="winnerName"></div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="btn-row">
+      <button class="btn btn-primary" id="raffleBtn" onclick="startRaffle()">🎲 Start Raffle!</button>
+      <button class="btn btn-secondary" onclick="resetRaffle()">↺ Reset</button>
+    </div>
+
+    <!-- Edit Participants Button -->
+    <button class="btn btn-edit" onclick="openEditModal()">✏️ Edit Participants</button>
+
+    <!-- Share Link -->
+    <div class="link-bar">
+      <input type="text" class="link-input" id="shareLink" readonly />
+      <button class="btn-copy" id="copyBtn" onclick="copyLink()">Copy Link</button>
+    </div>
+    <p class="sync-hint">同事打开这个链接即可同步名单 · Share this link to sync</p>
+
+    <!-- Participants List Toggle -->
+    <div class="participants-section">
+      <button class="participants-toggle" onclick="toggleList()">
+        <span id="toggleArrow">▾</span>
+        <span id="toggleLabel">Show all participants</span>
+        <span class="count-badge" id="countBadge">25</span>
+      </button>
+      <div class="participants-list" id="participantsList"></div>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h2>✏️ Edit Participants <span class="count-badge" id="modalCount">0</span></h2>
+      <p class="modal-hint">每行一个名字（One name per line）。空行会自动忽略。</p>
+      <textarea id="editTextarea" spellcheck="false" oninput="updateModalCount()"></textarea>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+        <button class="btn-save" onclick="saveParticipants()">✔ Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confetti Container -->
+  <div class="confetti-container" id="confettiContainer"></div>
+
+
+<script>
+  // ===== DEFAULT PARTICIPANTS =====
+const DEFAULT_PARTICIPANTS = [
+"Vicky","Kaite","Fahad","Ruifen","Jennifer","Dianne Porlares","Sherin Zafer",
+"Cici","Luna Lu","Grace Guan","Alex","Cherry Wang","Nicole","Uikey",
+"Carina Li","Sunny","Sophie Zhang","Yun Chen","Di Wang","Yuling Wang"
+];
+
+  // ===== STATE =====
+  const STORAGE_KEY = 'raffle_participants_v2';
+  let participants = loadParticipants();
+  let isRolling = false;
+  let rollInterval = null;
+  let listOpen = false;
+
+  // ===== LOAD / SAVE =====
+  function loadParticipants() {
+    // 1. Try URL hash (shareable link)
+    try {
+      const hash = location.hash.replace(/^#/, '');
+      if (hash) {
+        const decoded = JSON.parse(atob(decodeURIComponent(hash)));
+        if (Array.isArray(decoded) && decoded.length > 0) return decoded;
+      }
+    } catch(e) {}
+    // 2. Try localStorage (browser cache)
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch(e) {}
+    // 3. Fallback to default
+    return [...DEFAULT_PARTICIPANTS];
+  }
+
+  function saveToStorage(list) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch(e) {}
+  }
+
+  function updateUrlHash(list) {
+    try {
+      const encoded = encodeURIComponent(btoa(JSON.stringify(list)));
+      history.replaceState(null, '', '#' + encoded);
+      updateShareLinkInput();
+    } catch(e) {}
+  }
+
+  function updateShareLinkInput() {
+    const input = document.getElementById('shareLink');
+    input.value = window.location.href;
+  }
+
+  function copyLink() {
+    const btn = document.getElementById('copyBtn');
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy Link'; btn.classList.remove('copied'); }, 2000);
+    }).catch(() => {
+      const input = document.getElementById('shareLink');
+      input.select();
+      document.execCommand('copy');
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy Link'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  // ===== RENDER TAGS =====
+  function renderTags() {
+    const container = document.getElementById('participantsList');
+    container.innerHTML = '';
+    participants.forEach(name => {
+      const tag = document.createElement('span');
+      tag.className = 'participant-tag';
+      tag.textContent = name;
+      container.appendChild(tag);
+    });
+    document.getElementById('countBadge').textContent = participants.length;
+  }
+
+  // ===== TOGGLE LIST =====
+  function toggleList() {
+    listOpen = !listOpen;
+    const list = document.getElementById('participantsList');
+    list.classList.toggle('open', listOpen);
+    document.getElementById('toggleArrow').textContent = listOpen ? '▴' : '▾';
+    document.getElementById('toggleLabel').textContent = listOpen ? 'Hide participants' : 'Show all participants';
+  }
+
+  // ===== RAFFLE =====
+  function startRaffle() {
+    if (isRolling) return;
+    if (participants.length === 0) {
+      alert('No participants! Please add names first.');
+      return;
+    }
+
+    isRolling = true;
+    document.getElementById('raffleBtn').disabled = true;
+    document.getElementById('raffleBtn').textContent = '🎲 Rolling...';
+    document.getElementById('resultBanner').classList.remove('show');
+    document.getElementById('slotPlaceholder').style.display = 'none';
+    document.getElementById('slotText').style.display = 'inline';
+
+    const finalWinner = participants[Math.floor(Math.random() * participants.length)];
+
+    let speed = 60;
+    let elapsed = 0;
+    const totalDuration = 3200;
+    const slowStart = 2400;
+
+    rollInterval = setInterval(() => {
+      const displayName = participants[Math.floor(Math.random() * participants.length)];
+      document.getElementById('slotText').textContent = displayName;
+      elapsed += speed;
+
+      if (elapsed >= slowStart) {
+        speed = Math.min(speed + 18, 280);
+      }
+      if (elapsed >= totalDuration) {
+        clearInterval(rollInterval);
+        document.getElementById('slotText').textContent = finalWinner;
+        document.getElementById('winnerName').textContent = finalWinner;
+        document.getElementById('resultBanner').classList.add('show');
+        document.getElementById('raffleBtn').disabled = false;
+        document.getElementById('raffleBtn').textContent = '🎲 Start Raffle!';
+        isRolling = false;
+        launchConfetti();
+      }
+    }, speed);
+  }
+
+  function resetRaffle() {
+    if (isRolling) { clearInterval(rollInterval); isRolling = false; }
+    document.getElementById('slotText').style.display = 'none';
+    document.getElementById('slotText').textContent = '';
+    document.getElementById('slotPlaceholder').style.display = 'inline';
+    document.getElementById('resultBanner').classList.remove('show');
+    document.getElementById('raffleBtn').disabled = false;
+    document.getElementById('raffleBtn').textContent = '🎲 Start Raffle!';
+    document.getElementById('confettiContainer').innerHTML = '';
+  }
+
+  // ===== EDIT MODAL =====
+  function openEditModal() {
+    document.getElementById('editTextarea').value = participants.join('\n');
+    updateModalCount();
+    document.getElementById('modalOverlay').classList.add('open');
+    setTimeout(() => document.getElementById('editTextarea').focus(), 120);
+  }
+
+  function closeEditModal() {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+
+  function updateModalCount() {
+    const lines = document.getElementById('editTextarea').value
+      .split('\n').map(s => s.trim()).filter(s => s.length > 0);
+    document.getElementById('modalCount').textContent = lines.length;
+  }
+
+  function saveParticipants() {
+    const lines = document.getElementById('editTextarea').value
+      .split('\n').map(s => s.trim()).filter(s => s.length > 0);
+    if (lines.length === 0) {
+      alert('Please enter at least one participant!');
+      return;
+    }
+    participants = lines;
+    saveToStorage(participants);
+    updateUrlHash(participants);
+    renderTags();
+    resetRaffle();
+    closeEditModal();
+  }
+
+  // Close modal when clicking outside
+  document.getElementById('modalOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeEditModal();
+  });
+
+  // ===== CONFETTI =====
+  function launchConfetti() {
+    const container = document.getElementById('confettiContainer');
+    container.innerHTML = '';
+    const colors = ['#f7971e','#ffd200','#ff6b6b','#6bcfff','#a8ff78','#ff9ff3','#feca57'];
+    for (let i = 0; i < 120; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      const size = Math.random() * 10 + 6;
+      piece.style.cssText = `
+        left: ${Math.random() * 100}%;
+        width: ${size}px;
+        height: ${size}px;
+        background: ${colors[Math.floor(Math.random() * colors.length)]};
+        border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+        animation-duration: ${Math.random() * 2 + 2}s;
+        animation-delay: ${Math.random() * 0.8}s;
+        opacity: ${Math.random() * 0.6 + 0.4};
+      `;
+      container.appendChild(piece);
+    }
+    setTimeout(() => container.innerHTML = '', 4000);
+  }
+
+  // ===== INIT =====
+  updateUrlHash(participants);
+  updateShareLinkInput();
+  renderTags();
+</script>
+</body>
+</html>
