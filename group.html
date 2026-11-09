@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎲 Group Raffle</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      font-family: 'Segoe UI', Arial, sans-serif;
+      color: #fff;
+      padding: 28px 16px 40px;
+    }
+
+    h1 {
+      font-size: clamp(1.5rem, 4vw, 2.3rem);
+      letter-spacing: 2px;
+      text-align: center;
+      background: linear-gradient(90deg, #f7971e, #ffd200, #f7971e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #9aa3b2;
+      font-size: 0.9rem;
+      margin-bottom: 26px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 32px 34px;
+      width: 100%;
+      max-width: 760px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 22px;
+    }
+
+    /* ===== DUAL SLOT DISPLAY ===== */
+    .slots {
+      display: flex;
+      align-items: stretch;
+      gap: 14px;
+      width: 100%;
+    }
+    .slot {
+      flex: 1;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 20px 14px;
+      text-align: center;
+      min-height: 124px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+      overflow: hidden;
+    }
+    .slot.winner {
+      border-color: rgba(255,210,0,0.5);
+      box-shadow: 0 0 26px rgba(255,210,0,0.18);
+    }
+    .slot-group {
+      font-size: 0.72rem;
+      letter-spacing: 1px;
+      color: #7fc4ff;
+      background: rgba(100,200,255,0.12);
+      border: 1px solid rgba(100,200,255,0.2);
+      border-radius: 20px;
+      padding: 3px 12px;
+      white-space: nowrap;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .slot-group.idle { color: #555; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
+    .slot-name {
+      font-size: clamp(1.3rem, 3.4vw, 1.9rem);
+      font-weight: 700;
+      color: #ffd200;
+      letter-spacing: 1px;
+      word-break: break-word;
+      line-height: 1.2;
+    }
+    .slot-name.idle { color: #4a4f5c; font-weight: 500; font-size: 1.1rem; }
+    .slot-divider {
+      align-self: center;
+      color: #ffd200;
+      opacity: 0.5;
+      font-size: 1.2rem;
+      font-weight: 700;
+      user-select: none;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-row { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+    .btn {
+      padding: 12px 28px;
+      border: none;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-primary {
+      background: linear-gradient(135deg, #f7971e, #ffd200);
+      color: #1a1a2e;
+      box-shadow: 0 4px 20px rgba(247,151,30,0.4);
+    }
+    .btn-primary:hover:not(:disabled) { box-shadow: 0 6px 28px rgba(247,151,30,0.6); }
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.18); }
+    .btn-edit {
+      background: rgba(100,200,255,0.15);
+      color: #64c8ff;
+      border: 1px solid rgba(100,200,255,0.3);
+      font-size: 0.9rem;
+      padding: 9px 20px;
+    }
+    .btn-edit:hover { background: rgba(100,200,255,0.25); }
+
+    /* ===== GROUP PANELS ===== */
+    .groups {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 720px) {
+      .groups { grid-template-columns: 1fr; }
+      .card { padding: 24px 18px; }
+      .slots { flex-direction: column; }
+      .slot-divider { display: none; }
+    }
+    .group-panel {
+      background: rgba(255,255,255,0.045);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 13px;
+      padding: 14px;
+      transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
+    }
+    .group-panel.active {
+      border-color: rgba(255,210,0,0.45);
+      background: rgba(255,210,0,0.07);
+      box-shadow: 0 0 22px rgba(255,210,0,0.1);
+    }
+    .group-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .group-title { font-size: 0.92rem; font-weight: 700; color: #e8ecf3; }
+    .group-count {
+      font-size: 0.72rem;
+      color: #64c8ff;
+      background: rgba(100,200,255,0.14);
+      border-radius: 20px;
+      padding: 1px 9px;
+    }
+    .member-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .member-tag {
+      font-size: 0.76rem;
+      color: #c8cfdb;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 3px 10px;
+      transition: all 0.25s;
+    }
+    .member-tag.picked {
+      color: #1a1a2e;
+      background: linear-gradient(135deg, #f7971e, #ffd200);
+      border-color: transparent;
+      font-weight: 700;
+    }
+
+    /* ===== MODAL ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.72);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #1a2340;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 26px;
+      width: 100%;
+      max-width: 720px;
+      max-height: 88vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+      animation: slideUp 0.22s ease;
+    }
+    .modal h2 { font-size: 1.15rem; color: #64c8ff; }
+    .modal-hint { font-size: 0.78rem; color: #888; line-height: 1.5; }
+    .edit-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    @media (max-width: 720px) { .edit-grid { grid-template-columns: 1fr; } }
+    .edit-field { display: flex; flex-direction: column; gap: 6px; }
+    .edit-field label { font-size: 0.82rem; color: #c8cfdb; font-weight: 600; }
+    .edit-field textarea {
+      min-height: 170px;
+      background: rgba(0,0,0,0.32);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 0.87rem;
+      padding: 10px 12px;
+      resize: vertical;
+      line-height: 1.7;
+      outline: none;
+      font-family: inherit;
+    }
+    .edit-field textarea:focus { border-color: #64c8ff; }
+    .modal-footer { display: flex; gap: 12px; justify-content: flex-end; }
+    .btn-save {
+      background: linear-gradient(135deg, #64c8ff, #0099cc);
+      color: #fff; border: none; border-radius: 50px;
+      padding: 10px 26px; font-size: 0.95rem; font-weight: 600; cursor: pointer;
+    }
+    .btn-save:hover { opacity: 0.88; }
+    .btn-cancel {
+      background: rgba(255,255,255,0.08); color: #aaa;
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 50px;
+      padding: 10px 22px; font-size: 0.95rem; cursor: pointer;
+    }
+    .btn-cancel:hover { background: rgba(255,255,255,0.15); }
+
+    /* ===== CONFETTI ===== */
+    .confetti-container { position: fixed; inset: 0; pointer-events: none; z-index: 200; overflow: hidden; }
+    .confetti-piece { position: absolute; width: 10px; height: 10px; top: -20px; animation: confettiFall linear forwards; }
+
+    @keyframes slideUp {
+      from { transform: translateY(26px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes confettiFall {
+      to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎲 Group Raffle</h1>
+  <p class="subtitle">两个不同组各抽一人 · Two winners from different groups</p>
+
+  <div class="card">
+    <!-- Dual slots -->
+    <div class="slots">
+      <div class="slot" id="slotA">
+        <div class="slot-group idle" id="groupA">GROUP</div>
+        <div class="slot-name idle" id="nameA">---</div>
+      </div>
+      <div class="slot-divider">+</div>
+      <div class="slot" id="slotB">
+        <div class="slot-group idle" id="groupB">GROUP</div>
+        <div class="slot-name idle" id="nameB">---</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="raffleBtn" onclick="startRaffle()">🎲 Start Raffle!</button>
+      <button class="btn btn-secondary" onclick="resetRaffle()">↺ Reset</button>
+    </div>
+
+    <button class="btn btn-edit" onclick="openEdit()">✏️ Edit Groups</button>
+
+    <div class="groups" id="groupsContainer"></div>
+  </div>
+
+  <!-- Edit modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h2>✏️ Edit Groups</h2>
+      <p class="modal-hint">每行一个名字，也支持用「、」「,」分隔。空的组会被跳过。</p>
+      <div class="edit-grid" id="editGrid"></div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeEdit()">Cancel</button>
+        <button class="btn-save" onclick="saveGroups()">✔ Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="confetti-container" id="confettiContainer"></div>
+
+<script>
+  // ===== DEFAULT GROUPS =====
+  const DEFAULT_GROUPS = {
+    "北京组": ["Kaite","Nicole","Vicky","Jennifer","Cherry","Rebecca","Ashley","Charlene"],
+    "上海组": ["Cici","Zihan","Elijah","Yun","Selena","Leo"],
+    "海外组": ["Fahad","Ruifen","Dianne","Sherin"]
+  };
+
+  const STORAGE_KEY = 'group_raffle_v1';
+
+  // ===== STATE =====
+  let groups = loadGroups();
+  let isRolling = false;
+  let rollInterval = null;
+
+  // ===== LOAD / SAVE =====
+  function loadGroups() {
+    // 1. URL hash
+    try {
+      const hash = location.hash.replace(/^#/, '');
+      if (hash) {
+        const decoded = JSON.parse(atob(decodeURIComponent(hash)));
+        if (decoded && typeof decoded === 'object' && Object.keys(decoded).length > 0) return decoded;
+      }
+    } catch (e) {}
+    // 2. localStorage
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) return parsed;
+      }
+    } catch (e) {}
+    // 3. default
+    return JSON.parse(JSON.stringify(DEFAULT_GROUPS));
+  }
+
+  function persist() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(groups)); } catch (e) {}
+    try {
+      history.replaceState(null, '', '#' + encodeURIComponent(btoa(JSON.stringify(groups))));
+    } catch (e) {}
+  }
+
+  // ===== RENDER =====
+  function renderGroups() {
+    const container = document.getElementById('groupsContainer');
+    container.innerHTML = '';
+    Object.keys(groups).forEach(groupName => {
+      const members = groups[groupName];
+      const panel = document.createElement('div');
+      panel.className = 'group-panel';
+      panel.dataset.group = groupName;
+
+      const head = document.createElement('div');
+      head.className = 'group-head';
+      const title = document.createElement('span');
+      title.className = 'group-title';
+      title.textContent = groupName;
+      const count = document.createElement('span');
+      count.className = 'group-count';
+      count.textContent = members.length;
+      head.appendChild(title);
+      head.appendChild(count);
+
+      const list = document.createElement('div');
+      list.className = 'member-list';
+      members.forEach(name => {
+        const tag = document.createElement('span');
+        tag.className = 'member-tag';
+        tag.dataset.group = groupName;
+        tag.dataset.name = name;
+        tag.textContent = name;
+        list.appendChild(tag);
+      });
+
+      panel.appendChild(head);
+      panel.appendChild(list);
+      container.appendChild(panel);
+    });
+  }
+
+  // ===== RAFFLE =====
+  function startRaffle() {
+    if (isRolling) return;
+
+    // Groups that actually have members
+    const available = Object.keys(groups).filter(g => groups[g] && groups[g].length > 0);
+    if (available.length < 2) {
+      alert('至少需要两个有人的组才能抽奖！\nAt least two non-empty groups are required.');
+      return;
+    }
+
+    isRolling = true;
+    const btn = document.getElementById('raffleBtn');
+    btn.disabled = true;
+    btn.textContent = '🎲 Rolling...';
+
+    // Reset visuals
+    document.getElementById('slotA').classList.remove('winner');
+    document.getElementById('slotB').classList.remove('winner');
+    document.querySelectorAll('.group-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.member-tag').forEach(t => t.classList.remove('picked'));
+
+    // Pick 2 distinct groups
+    const shuffled = available.slice().sort(() => Math.random() - 0.5);
+    const groupA = shuffled[0];
+    const groupB = shuffled[1];
+
+    const winnerA = groups[groupA][Math.floor(Math.random() * groups[groupA].length)];
+    const winnerB = groups[groupB][Math.floor(Math.random() * groups[groupB].length)];
+
+    const groupElA = document.getElementById('groupA');
+    const groupElB = document.getElementById('groupB');
+    const nameElA = document.getElementById('nameA');
+    const nameElB = document.getElementById('nameB');
+    groupElA.classList.remove('idle');
+    groupElB.classList.remove('idle');
+    nameElA.classList.remove('idle');
+    nameElB.classList.remove('idle');
+
+    const totalDuration = 3400;
+    const slowStart = 2500;
+    let speed = 70;
+    let elapsed = 0;
+
+    function randomOf(list) { return list[Math.floor(Math.random() * list.length)]; }
+
+    rollInterval = setInterval(() => {
+      // Rolling display
+      const rollGroupA = randomOf(available);
+      const rollGroupB = (() => {
+        const others = available.filter(g => g !== rollGroupA);
+        return others.length ? randomOf(others) : rollGroupA;
+      })();
+
+      if (elapsed < totalDuration - 500) {
+        groupElA.textContent = rollGroupA;
+        nameElA.textContent = randomOf(groups[rollGroupA]);
+        groupElB.textContent = rollGroupB;
+        nameElB.textContent = randomOf(groups[rollGroupB]);
+      }
+
+      elapsed += speed;
+      if (elapsed >= slowStart) speed = Math.min(speed + 20, 300);
+
+      if (elapsed >= totalDuration) {
+        clearInterval(rollInterval);
+
+        groupElA.textContent = groupA;
+        nameElA.textContent = winnerA;
+        groupElB.textContent = groupB;
+        nameElB.textContent = winnerB;
+
+        document.getElementById('slotA').classList.add('winner');
+        document.getElementById('slotB').classList.add('winner');
+
+        // Highlight selected groups + members
+        document.querySelectorAll('.group-panel').forEach(p => {
+          if (p.dataset.group === groupA || p.dataset.group === groupB) p.classList.add('active');
+        });
+        document.querySelectorAll('.member-tag').forEach(t => {
+          if ((t.dataset.group === groupA && t.dataset.name === winnerA) ||
+              (t.dataset.group === groupB && t.dataset.name === winnerB)) {
+            t.classList.add('picked');
+          }
+        });
+
+        btn.disabled = false;
+        btn.textContent = '🎲 Start Raffle!';
+        isRolling = false;
+        launchConfetti();
+      }
+    }, speed);
+  }
+
+  function resetRaffle() {
+    if (isRolling) { clearInterval(rollInterval); isRolling = false; }
+    const btn = document.getElementById('raffleBtn');
+    btn.disabled = false;
+    btn.textContent = '🎲 Start Raffle!';
+
+    [['groupA','GROUP'],['groupB','GROUP']].forEach(([id, text]) => {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.classList.add('idle');
+    });
+    ['nameA','nameB'].forEach(id => {
+      const el = document.getElementById(id);
+      el.textContent = '---';
+      el.classList.add('idle');
+    });
+    document.getElementById('slotA').classList.remove('winner');
+    document.getElementById('slotB').classList.remove('winner');
+    document.querySelectorAll('.group-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.member-tag').forEach(t => t.classList.remove('picked'));
+    document.getElementById('confettiContainer').innerHTML = '';
+  }
+
+  // ===== EDIT MODAL =====
+  function openEdit() {
+    const grid = document.getElementById('editGrid');
+    grid.innerHTML = '';
+    Object.keys(groups).forEach(groupName => {
+      const field = document.createElement('div');
+      field.className = 'edit-field';
+
+      const label = document.createElement('label');
+      label.textContent = groupName;
+      const ta = document.createElement('textarea');
+      ta.dataset.group = groupName;
+      ta.spellcheck = false;
+      ta.value = groups[groupName].join('\n');
+
+      field.appendChild(label);
+      field.appendChild(ta);
+      grid.appendChild(field);
+    });
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+
+  function closeEdit() {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+
+  function saveGroups() {
+    const next = {};
+    document.querySelectorAll('#editGrid textarea').forEach(ta => {
+      const names = ta.value
+        .split(/[\n、,，;；]/)
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+      if (names.length > 0) next[ta.dataset.group] = names;
+    });
+
+    const filled = Object.keys(next).filter(g => next[g].length > 0);
+    if (filled.length < 2) {
+      alert('至少需要两个有人的组！请至少填写两个组。');
+      return;
+    }
+
+    groups = next;
+    persist();
+    renderGroups();
+    resetRaffle();
+    closeEdit();
+  }
+
+  document.getElementById('modalOverlay').addEventListener('click', function (e) {
+    if (e.target === this) closeEdit();
+  });
+
+  // ===== CONFETTI =====
+  function launchConfetti() {
+    const container = document.getElementById('confettiContainer');
+    container.innerHTML = '';
+    const colors = ['#f7971e', '#ffd200', '#ff6b6b', '#6bcfff', '#a8ff78', '#ff9ff3', '#feca57'];
+    for (let i = 0; i < 130; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      const size = Math.random() * 10 + 6;
+      piece.style.cssText = `
+        left: ${Math.random() * 100}%;
+        width: ${size}px;
+        height: ${size}px;
+        background: ${colors[Math.floor(Math.random() * colors.length)]};
+        border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+        animation-duration: ${Math.random() * 2 + 2}s;
+        animation-delay: ${Math.random() * 0.8}s;
+        opacity: ${Math.random() * 0.6 + 0.4};
+      `;
+      container.appendChild(piece);
+    }
+    setTimeout(() => container.innerHTML = '', 4200);
+  }
+
+  // ===== INIT =====
+  renderGroups();
+  resetRaffle();
+</script>
+</body>
+</html>
