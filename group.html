@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -276,7 +276,7 @@
 <body>
 
   <h1>🎲 Group Raffle</h1>
-  <p class="subtitle">两个不同组各抽一人 · Two winners from different groups</p>
+  <p class="subtitle">Two winners from two different groups</p>
 
   <div class="card">
     <!-- Dual slots -->
@@ -306,7 +306,7 @@
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
       <h2>✏️ Edit Groups</h2>
-      <p class="modal-hint">每行一个名字，也支持用「、」「,」分隔。空的组会被跳过。</p>
+      <p class="modal-hint">One name per line. Commas and semicolons are also supported. Empty groups are skipped.</p>
       <div class="edit-grid" id="editGrid"></div>
       <div class="modal-footer">
         <button class="btn-cancel" onclick="closeEdit()">Cancel</button>
@@ -320,12 +320,12 @@
 <script>
   // ===== DEFAULT GROUPS =====
   const DEFAULT_GROUPS = {
-    "北京组": ["Kaite","Nicole","Vicky","Jennifer","Cherry","Rebecca","Ashley","Charlene"],
-    "上海组": ["Cici","Zihan","Elijah","Yun","Selena","Leo"],
-    "海外组": ["Fahad","Ruifen","Dianne","Sherin"]
+    "Beijing": ["Kaite","Nicole","Vicky","Jennifer","Cherry","Rebecca","Ashley","Charlene"],
+    "Shanghai": ["Cici","Zihan","Elijah","Yun","Selena","Leo"],
+    "Overseas": ["Fahad","Ruifen","Dianne","Sherin"]
   };
 
-  const STORAGE_KEY = 'group_raffle_v1';
+  const STORAGE_KEY = 'group_raffle_v2';
 
   // ===== STATE =====
   let groups = loadGroups();
@@ -406,7 +406,7 @@
     // Groups that actually have members
     const available = Object.keys(groups).filter(g => groups[g] && groups[g].length > 0);
     if (available.length < 2) {
-      alert('至少需要两个有人的组才能抽奖！\nAt least two non-empty groups are required.');
+      alert('At least two groups with members are required to run the raffle!');
       return;
     }
 
@@ -554,7 +554,7 @@
 
     const filled = Object.keys(next).filter(g => next[g].length > 0);
     if (filled.length < 2) {
-      alert('至少需要两个有人的组！请至少填写两个组。');
+      alert('Please fill in at least two groups with members.');
       return;
     }
 
