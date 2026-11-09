@@ -361,7 +361,7 @@
       <input type="text" class="link-input" id="shareLink" readonly />
       <button class="btn-copy" id="copyBtn" onclick="copyLink()">Copy Link</button>
     </div>
-    <p class="sync-hint">同事打开这个链接即可同步名单 · Share this link to sync</p>
+    <p class="sync-hint">Share this link so everyone sees the same list</p>
 
     <!-- Participants List Toggle -->
     <div class="participants-section">
@@ -378,7 +378,7 @@
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
       <h2>✏️ Edit Participants <span class="count-badge" id="modalCount">0</span></h2>
-      <p class="modal-hint">每行一个名字（One name per line）。空行会自动忽略。</p>
+      <p class="modal-hint">One name per line. Empty lines are ignored automatically.</p>
       <textarea id="editTextarea" spellcheck="false" oninput="updateModalCount()"></textarea>
       <div class="modal-footer">
         <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
