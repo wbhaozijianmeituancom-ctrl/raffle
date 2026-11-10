@@ -142,7 +142,29 @@
     }
     .btn-edit:hover { background: rgba(100,200,255,0.25); }
 
-    /* ===== GROUP PANELS ===== */
+    /* ===== GROUP PANELS (collapsible) ===== */
+    .groups-toggle {
+      background: none;
+      border: none;
+      color: #8b93a3;
+      font-size: 0.82rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      transition: color 0.15s, background 0.15s;
+      font-family: inherit;
+    }
+    .groups-toggle:hover { color: #fff; background: rgba(255,255,255,0.06); }
+    .groups-toggle .arrow { display: inline-block; transition: transform 0.2s; font-size: 0.7rem; }
+    .groups-toggle.open .arrow { transform: rotate(180deg); }
+    .groups-wrap {
+      width: 100%;
+      display: none;
+    }
+    .groups-wrap.open { display: block; }
     .groups {
       width: 100%;
       display: grid;
@@ -299,7 +321,16 @@
 
     <button class="btn btn-edit" onclick="openEdit()">✏️ Edit Groups</button>
 
-    <div class="groups" id="groupsContainer"></div>
+    <!-- Groups toggle -->
+    <button class="groups-toggle" id="groupsToggle" onclick="toggleGroups()">
+      <span class="arrow">▾</span>
+      <span id="groupsToggleLabel">Show groups</span>
+    </button>
+
+    <!-- Groups panels -->
+    <div class="groups-wrap" id="groupsWrap">
+      <div class="groups" id="groupsContainer"></div>
+    </div>
   </div>
 
   <!-- Edit modal -->
@@ -514,6 +545,15 @@
     document.querySelectorAll('.group-panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.member-tag').forEach(t => t.classList.remove('picked'));
     document.getElementById('confettiContainer').innerHTML = '';
+  }
+
+  function toggleGroups() {
+    const wrap = document.getElementById('groupsWrap');
+    const btn = document.getElementById('groupsToggle');
+    const label = document.getElementById('groupsToggleLabel');
+    const open = wrap.classList.toggle('open');
+    btn.classList.toggle('open', open);
+    label.textContent = open ? 'Hide groups' : 'Show groups';
   }
 
   // ===== EDIT MODAL =====
